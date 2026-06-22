@@ -2,7 +2,7 @@ import os
 import platform
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.1.0"
 PORT = int(os.environ.get("PORT", "8080"))
 
 
