@@ -1,0 +1,53 @@
+name: CI/CD - ECS Blue/Green
+ 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+ 
+permissions:
+  id-token: write      # required for OIDC
+  contents: read
+ 
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: helloworld
+  ECS_CLUSTER: test-ecs
+  ECS_SERVICE: hw-service
+  TASK_FAMILY: hw-task
+  CONTAINER_NAME: hw-container
+ 
+jobs:
+  # ===========================================================================
+  # 1. Build, scan, push image
+  # ===========================================================================
+  build:
+    name: Build & Push
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.image.outputs.uri }}
+    steps:
+      - uses: actions/checkout@v4
+ 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::504110891886:role/github-oidc-provider-aws
+          aws-region: ${{ env.AWS_REGION }}
+ 
+      - name: Login to ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+ 
+      - name: Compute image tag
+        id: image
+        run: |
+          TAG="${{ github.sha }}"
+          echo "uri=${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:${TAG}" >> "$GITHUB_OUTPUT"
+ 
+      - name: Build image
+        run: docker build -t "${{ steps.image.outputs.uri }}" .
+
+      - name: Push image
+        run: docker push "${{ steps.image.outputs.uri }}"
+ 
