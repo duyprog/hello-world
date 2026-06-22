@@ -42,12 +42,15 @@ jobs:
       - name: Compute image tag
         id: image
         run: |
-          TAG="${{ github.sha }}"
-          echo "uri=${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:${TAG}" >> "$GITHUB_OUTPUT"
- 
+          REPO="${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}"
+          echo "uri=${REPO}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          echo "latest=${REPO}:latest" >> "$GITHUB_OUTPUT"
+
       - name: Build image
-        run: docker build -t "${{ steps.image.outputs.uri }}" .
+        run: docker build -t "${{ steps.image.outputs.uri }}" -t "${{ steps.image.outputs.latest }}" .
 
       - name: Push image
-        run: docker push "${{ steps.image.outputs.uri }}"
+        run: |
+          docker push "${{ steps.image.outputs.uri }}"
+          docker push "${{ steps.image.outputs.latest }}"
  
